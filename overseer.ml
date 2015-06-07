@@ -51,20 +51,16 @@ let get_filemap (filenames : Str.regexp array) : float StringMap.t =
 
 let () =
     let patterns, command = get_args Sys.argv in
-    let filemap = StringMap.empty in
-    let foo dir =
-        let h = Unix.opendir dir in
-        try
-            let filename = Unix.readdir h in
-            print_endline filename
-        with End_of_file ->
-            Unix.closedir h
-    in
     let patterns = Array.map Str.regexp_string patterns in
-    let x = get_filemap patterns in
-    let () = List.iter
-        (fun (k, v) -> print_endline (k ^ " " ^ string_of_float v))
-        (StringMap.bindings x)
-    in
-    ()
+    let command = Array.fold_left (fun a b -> a ^ " " ^ b) "" command in
+    let init_map = get_filemap patterns in
+    let rec checking_loop old_mod_times =
+        let () = Unix.sleep 1 in
+        let new_map = get_filemap patterns in
+        if StringMap.equal (=) old_mod_times new_map
+            then checking_loop new_map
+            else
+                let exit = Sys.command command in
+                checking_loop new_map
+    in checking_loop init_map
 

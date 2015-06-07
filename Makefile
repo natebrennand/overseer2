@@ -15,7 +15,6 @@ all: clean overseer
 
 overseer: $(OVERSEER_OBJS)
 	$(OCAMLC) $(LIBS) -o overseer $(OVERSEER_OBJS)
-	./overseer *.ml -c make
 
 overseer.cmo: overseer.ml
 
