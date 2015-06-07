@@ -2,8 +2,8 @@
 OCAMLC=ocamlc
 OCAMLDEP=ocamldep
 
-OFLAGS=-w A # warn about everything
-# OFLAGS=-w -A # silence everything
+# OFLAGS=-w A # warn about everything
+OFLAGS=-w -A # silence everything
 
 
 LIBS = str.cma unix.cma
