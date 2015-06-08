@@ -1,7 +1,7 @@
 
 # Overseer
 
-This is a reimplementation of my [Overseer](https://github.com/natebrennand/overseer) project in Ocaml.
+This is a reimplementation of my [Overseer](https://github.com/natebrennand/overseer) project in OCaml.
 
 Overseer is a tool that watches for file changes and calls a provided command every time a file changes.
 This is done by walking the filesystem for changes in the `time_modified` attribute of a file.
