@@ -10,11 +10,12 @@ let rec index_of ?(index : int=0) (aray : 'a array) (elem : 'a) : int option =
 
 (* get_args parses CLI arguments into a set of filename
  * patterns and a command to run. *)
-let get_args (vargs : string array) : (string array * string array) =
+let get_args (vargs : string array) : (Str.regexp array * string array) =
     match index_of vargs "-c" with
         | None   -> raise (Missing_parameters "no comand found after '-c' found in CLI arguments")
         | Some i ->
             let patterns = Array.sub vargs 1 (i-1) in
+            let patterns = Array.map Str.regexp patterns in
             let command = Array.sub vargs (i+1) (Array.length vargs -(i+1)) in
             patterns, command
 
@@ -22,13 +23,13 @@ let get_args (vargs : string array) : (string array * string array) =
 (* walk calls a provided function on every regular file in directories
  * nested under the provided initial directory.
  * The search for files is performed in a DFS style. *)
-let rec walk (dir : string) (fn : string -> Unix.stats -> 'a -> 'a) (x : 'a) =
+let walk (dir : string) (fn : string -> Unix.stats -> 'a -> 'a) (x : 'a) =
     let rec walkdir (dir_name : string) (dir : Unix.dir_handle) (y : 'b) : 'b =
         try
             let filename = Unix.readdir dir in
             let fullpath = if dir_name <> "." then Filename.concat dir_name filename else filename in
             let s = Unix.stat fullpath in
-            match s.st_kind with
+            match (s.Unix.st_kind) with
                 | Unix.S_REG -> walkdir dir_name dir (fn fullpath s y)     (* call 'fn' on regular files*)
                 | Unix.S_DIR when String.sub filename 0 1 <> "." ->
                     walkdir fullpath (Unix.opendir fullpath) y             (* Start the DFS *)
@@ -44,14 +45,14 @@ let rec walk (dir : string) (fn : string -> Unix.stats -> 'a -> 'a) (x : 'a) =
 let get_filemap (filenames : Str.regexp array) : float StringMap.t =
     let get_times (filename : string) (s : Unix.stats) (data : float StringMap.t) =
         if List.exists (fun p -> Str.string_match p filename 0) (Array.to_list filenames)
-            then StringMap.add filename s.st_mtime data
+            then StringMap.add filename s.Unix.st_mtime data
             else data
-    in walk "." get_times (StringMap.empty)
+    in
+    walk "." get_times (StringMap.empty)
 
 
 let () =
     let patterns, command = get_args Sys.argv in
-    let patterns = Array.map Str.regexp_string patterns in
     let command = String.concat " " (Array.to_list command) in
     let init_map = get_filemap patterns in
     let rec checking_loop old_mod_times =
@@ -60,7 +61,10 @@ let () =
         if StringMap.equal (=) old_mod_times new_map
             then checking_loop new_map
             else
-                let exit = Sys.command command in
+                print_endline (match Sys.command command with
+                    | 0 -> "No error" |> Output.green_text
+                    | i -> Format.sprintf "ERROR: exit status %d" i |> Output.red_text);
                 checking_loop new_map
-    in checking_loop init_map
+    in
+    checking_loop init_map
 
