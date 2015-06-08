@@ -10,13 +10,14 @@ let rec index_of ?(index : int=0) (aray : 'a array) (elem : 'a) : int option =
 
 (* get_args parses CLI arguments into a set of filename
  * patterns and a command to run. *)
-let get_args (vargs : string array) : (Str.regexp array * string array) =
+let get_args (vargs : string array) : (Str.regexp array * string) =
     match index_of vargs "-c" with
         | None   -> raise (Missing_parameters "no comand found after '-c' found in CLI arguments")
         | Some i ->
             let patterns = Array.sub vargs 1 (i-1) in
             let patterns = Array.map Str.regexp patterns in
             let command = Array.sub vargs (i+1) (Array.length vargs -(i+1)) in
+            let command = String.concat " " (Array.to_list command) in
             patterns, command
 
 
@@ -53,7 +54,6 @@ let get_filemap (filenames : Str.regexp array) : float StringMap.t =
 
 let () =
     let patterns, command = get_args Sys.argv in
-    let command = String.concat " " (Array.to_list command) in
     let init_map = get_filemap patterns in
     let rec checking_loop old_mod_times =
         let () = Unix.sleep 1 in
